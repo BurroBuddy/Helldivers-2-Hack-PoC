@@ -29,6 +29,10 @@ This is PoC that i create to learn about asm injection using C# on 64bit applica
 
 ### Open with administrator, 
 
+###Config.ini will generate if not exists ( setup feature you want to turn on ( 1 ) or off ( 0 ).
+  
+###then reopen the program.
+
 ### then open the game. 
 
 ### cheat automatic active.
