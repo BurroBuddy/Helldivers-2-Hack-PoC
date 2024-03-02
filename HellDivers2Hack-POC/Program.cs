@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace HellDivers2Hack_POC
 {
-    internal class Program
+    public class Program
     {
-        
+
 
         static void Main(string[] args)
         {
@@ -18,6 +19,15 @@ namespace HellDivers2Hack_POC
 
             string targetProcessName = "helldivers2";
             string targetModuleName = "game.dll";
+
+            var confIni = new ConfigIni("Configs.ini");
+            if (!File.Exists("Configs.ini"))
+            {
+                File.WriteAllText("Configs.ini", "[CheatOption]\r\nInvulnerable=1\r\nInf_Health=1\r\nMax_Resources=1\r\nNo_Reload=1\r\nInf_Granades=1\r\nInf_Ammo=1\r\nInf_Syringes=1\r\nInf_Stamina=1\r\nInf_Strategems=1\r\nInf_Time_Mission=1\r\n");
+                Console.WriteLine("Edit congfig and re-open this program.");
+                Console.ReadLine();
+                Environment.Exit(0);
+            }
 
             Process targetProcess;
 
@@ -34,14 +44,15 @@ namespace HellDivers2Hack_POC
                 Thread.Sleep(1000);
             }
             Console.WriteLine("HellDivers2 Process Found.");
-
+            // Start the stopwatch
+            Stopwatch stopwatch = Stopwatch.StartNew();
             while (true)
             {
                 if (targetProcess != null)
                 {
                     // Process found, now check for the module
                     ProcessModule targetModule = Memory.GetModuleByName(targetProcess, targetModuleName);
-                    Console.WriteLine("Find game.dll Module..");
+                    //Console.WriteLine("Find game.dll Module..");
                     if (targetModule == null)
                     {
                         targetProcess = Memory.GetProcessByName(targetProcessName);
@@ -60,20 +71,18 @@ namespace HellDivers2Hack_POC
                         Console.WriteLine("Start Hack Process..");
 
                     //Invulnerable
-                    RetryScanPatern: // ( Label Needed to wait bytes is ready )
+                    RetryScanPatern:
                         IntPtr offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "45 89 38 49 8B 84 DE 28 04 00 00 8B 48 10");
                         if (offset != IntPtr.Zero)
                         {
-                            IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Allocate memory near the offset | Adjust the size as needed
-                            if (allocatedMemory != IntPtr.Zero)
+                            if (confIni.Read("Invulnerable", "CheatOption"))
                             {
-                                Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
-                                Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.Invulnerable, 14);
+                                Memory.NopAddress(targetProcess, offset, 3);
                                 Console.WriteLine("Invulnerable Active.");
                             }
                             else
                             {
-                                Console.WriteLine("Failed to allocate memory.");
+                                Console.WriteLine("Pattern Invulnerable Found. (Skiped) ");
                             }
                         }
                         else
@@ -83,156 +92,188 @@ namespace HellDivers2Hack_POC
                         }
 
                         // Max Resources
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "45 01 B4 8A EC 17 00 00");
-                        if (offset != IntPtr.Zero)
+                        if (confIni.Read("Max_Resources", "CheatOption"))
                         {
-                            IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Adjust the size as needed | Allocate memory near the offset
-
-                            if (allocatedMemory != IntPtr.Zero)
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "45 01 B4 8A EC 17 00 00");
+                            if (offset != IntPtr.Zero)
                             {
-                                Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
-                                Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.MaxResources, 17);
-                                Console.WriteLine("Max Resources Active.");
+                                IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Adjust the size as needed | Allocate memory near the offset
+
+                                if (allocatedMemory != IntPtr.Zero)
+                                {
+                                    Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
+                                    Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.MaxResources, 17);
+                                    Console.WriteLine("Max Resources Active.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Failed to allocate memory.");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine("Failed to allocate memory.");
+                                Console.WriteLine("Pattern Max Resources not found in the module.");
                             }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Max Resources not found in the module.");
                         }
 
                         //No Reload
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 89 28 49 8B 84 CA 28 20 00 00 8B 48 10");
-                        if (offset != IntPtr.Zero)
+                        if (confIni.Read("No_Reload", "CheatOption"))
                         {
-                            IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Adjust the size as needed | Allocate memory near the offset
-
-                            if (allocatedMemory != IntPtr.Zero)
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 89 28 49 8B 84 CA 28 20 00 00 8B 48 10");
+                            if (offset != IntPtr.Zero)
                             {
-                                Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
-                                Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.NoReload, 14);
-                                Console.WriteLine("No Reload Active.");
+                                IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Adjust the size as needed | Allocate memory near the offset
+
+                                if (allocatedMemory != IntPtr.Zero)
+                                {
+                                    Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
+                                    Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.NoReload, 14);
+                                    Console.WriteLine("No Reload Active.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Failed to allocate memory.");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine("Failed to allocate memory.");
+                                Console.WriteLine("Pattern No Reload not found in the module.");
                             }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern No Reload not found in the module.");
                         }
 
                         // Inf Health
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 8B 84 8B 28 4C 00 00 48 8B 5C 24 20 48 8B 74 24 28");
-                        if (offset != IntPtr.Zero)
+                        if (confIni.Read("Inf_Health", "CheatOption"))
                         {
-                            IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Adjust the size as needed || Allocate memory near the offset
-
-                            if (allocatedMemory != IntPtr.Zero)
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 8B 84 8B 28 4C 00 00 48 8B 5C 24 20 48 8B 74 24 28");
+                            if (offset != IntPtr.Zero)
                             {
-                                Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
-                                Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.InfHealth, 18);
-                                Console.WriteLine("Infinite Health Active.");
+                                IntPtr allocatedMemory = Memory.AllocateMemoryNearOffset(targetProcess, baseAddress, offset, 0x1000); // Adjust the size as needed || Allocate memory near the offset
+
+                                if (allocatedMemory != IntPtr.Zero)
+                                {
+                                    Memory.CreateTrampoline(targetProcess, baseAddress, offset, allocatedMemory);
+                                    Memory.WriteAssemblyInstructions(targetProcess, allocatedMemory, offset, ByteArrayAsmInstruction.InfHealth, 18);
+                                    Console.WriteLine("Infinite Health 2 Active.");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Failed to allocate memory.");
+                                }
                             }
                             else
                             {
-                                Console.WriteLine("Failed to allocate memory.");
+                                Console.WriteLine("Pattern Inf Health not found in the module.");
                             }
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Inf Health not found in the module.");
                         }
 
                         //Inf Granades
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 FF 08 4A 8B 84 ED");
+                        if (confIni.Read("Inf_Granades", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 FF 08 4A 8B 84 ED");
 
-                        if (offset != IntPtr.Zero)
-                        {
-                            Memory.NopAddress(targetProcess, offset, 3);
-                            Console.WriteLine("Granades Active.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Granades not found in the module.");
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.NopAddress(targetProcess, offset, 3);
+                                Console.WriteLine("Granades Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern Granades not found in the module.");
+                            }
                         }
 
                         //Inf Ammo
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 83 2C C2 01 4D 8D 04 C2 49 8B 84 CA");
+                        if (confIni.Read("Inf_Ammo", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 83 2C C2 01 4D 8D 04 C2 49 8B 84 CA");
 
-                        if (offset != IntPtr.Zero)
-                        {
-                            Memory.PatchAddress(targetProcess, IntPtr.Add(offset, 4), "00");
-                            Console.WriteLine("Ammo Active.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Ammo not found in the module.");
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.PatchAddress(targetProcess, IntPtr.Add(offset, 4), "00");
+                                Console.WriteLine("Ammo Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern Ammo not found in the module.");
+                            }
                         }
 
                         //Inf Syringes
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 FF CF 3B C2 74 61");
+                        if (confIni.Read("Inf_Syringes", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "41 FF CF 3B C2 74 61");
 
-                        if (offset != IntPtr.Zero)
-                        {
-                            Memory.NopAddress(targetProcess, offset, 3);
-                            Console.WriteLine("Syringes Active.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Syringes not found in the module.");
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.NopAddress(targetProcess, offset, 3);
+                                Console.WriteLine("Syringes Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern Syringes not found in the module.");
+                            }
                         }
 
                         //Inf Stamina
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "F3 0F 5F C8 F3 41 0F 11 08");
+                        if (confIni.Read("Inf_Stamina", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "F3 0F 5F C8 F3 41 0F 11 08");
 
-                        if (offset != IntPtr.Zero)
-                        {
-                            Memory.NopAddress(targetProcess, IntPtr.Add(offset, 4), 5);
-                            Console.WriteLine("Stamina Active.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Stamina not found in the module.");
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.NopAddress(targetProcess, IntPtr.Add(offset, 4), 5);
+                                Console.WriteLine("Stamina Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern Stamina not found in the module.");
+                            }
                         }
 
                         //Inf Strategems
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "C0 F3 48 0F 2C C8 48 03 48 18 48 89 8C 37 40 02 00 00");
+                        if (confIni.Read("Inf_Strategems", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "C0 F3 48 0F 2C C8 48 03 48 18 48 89 8C 37 40 02 00 00");
 
-                        if (offset != IntPtr.Zero)
-                        {
-                            Memory.NopAddress(targetProcess, IntPtr.Add(offset, 6), 4);
-                            Console.WriteLine("Strategems Active.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Strategems not found in the module.");
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.NopAddress(targetProcess, IntPtr.Add(offset, 6), 4);
+                                Memory.PatchAddress(targetProcess, IntPtr.Add(offset, 25), "8D0190");
+                                Memory.PatchAddress(targetProcess, IntPtr.Add(offset, 33), "8D0190");
+                                Console.WriteLine("Strategems Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern Strategems not found in the module.");
+                            }
                         }
 
                         //Inf Time Mission
-                        offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "F3 43 0F 11 84 F4 88 64 03 00");
+                        if (confIni.Read("Inf_Time_Mission", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "F3 43 0F 11 84 F4 88 64 03 00");
 
-                        if (offset != IntPtr.Zero)
-                        {
-                            Memory.NopAddress(targetProcess, offset, 10);
-                            Console.WriteLine("Time Mission Active.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Pattern Time Mission not found in the module.");
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.NopAddress(targetProcess, offset, 10);
+                                Console.WriteLine("Time Mission Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern Time Mission not found in the module.");
+                            }
                         }
 
                         Console.WriteLine("Happy Cheating.......");
-                        Console.ReadLine();
 
-
+                        break;
                     }
                 }
             }
+            stopwatch.Stop();
+            // Print the elapsed time
+            Console.WriteLine($"Elapsed Time: {stopwatch.Elapsed}");
+            Console.ReadLine();
         }
     }
 }
