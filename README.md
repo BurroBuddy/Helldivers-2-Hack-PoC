@@ -23,6 +23,8 @@ This is PoC that i create to learn about asm injection using C# on 64bit applica
 
 ### Max Resources
 
+### No Recoil
+
 
 
 # How to use :
