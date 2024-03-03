@@ -1,0 +1,10 @@
+*.vsidx
+*.suo
+*.json
+*.ini
+*.exe
+*.exe.config
+*.pdb
+*.cache
+*.txt
+*.NETFramework,Version=v4.8.AssemblyAttributes.cs
