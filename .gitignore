@@ -1,0 +1,11 @@
+*.vsidx
+*.suo
+*.json
+*.ini
+*.exe
+*.exe.config
+*.pdb
+*.cache
+*.txt
+HellDivers2Hack-POC/bin
+*.NETFramework,Version=v4.8.AssemblyAttributes.cs
