@@ -16,6 +16,7 @@ namespace HellDivers2Hack_POC
         static void Main(string[] args)
         {
             Console.WriteLine("#Helldivers 2 Hack PoC ( Converting Auto Assembly CE into C# )\n\n");
+            Console.WriteLine("Thabks to cfemen and gir489");
 
             string targetProcessName = "helldivers2";
             string targetModuleName = "game.dll";
@@ -23,7 +24,7 @@ namespace HellDivers2Hack_POC
             var confIni = new ConfigIni("Configs.ini");
             if (!File.Exists("Configs.ini"))
             {
-                File.WriteAllText("Configs.ini", "[CheatOption]\r\nInvulnerable=1\r\nInf_Health=1\r\nMax_Resources=1\r\nNo_Reload=1\r\nInf_Granades=1\r\nInf_Ammo=1\r\nInf_Syringes=1\r\nInf_Stamina=1\r\nInf_Strategems=1\r\nInf_Time_Mission=1\r\n");
+                File.WriteAllText("Configs.ini", "[CheatOption]\r\nInvulnerable=1\r\nInf_Health=1\r\nMax_Resources=1\r\nNo_Reload=1\r\nInf_Granades=1\r\nInf_Ammo=1\r\nInf_Syringes=1\r\nInf_Stamina=1\r\nInf_Strategems=1\r\nInf_Time_Mission=1\r\nNo_Recoil=1\r\n");
                 Console.WriteLine("Edit congfig and re-open this program.");
                 Console.ReadLine();
                 Environment.Exit(0);
@@ -261,6 +262,22 @@ namespace HellDivers2Hack_POC
                             else
                             {
                                 Console.WriteLine("Pattern Time Mission not found in the module.");
+                            }
+                        }
+
+                        //No Recoil
+                        if (confIni.Read("No_Recoil", "CheatOption"))
+                        {
+                            offset = Memory.FindPatternOffset(targetProcess, baseAddress, moduleSize, "48 83 EC 18 48 8B 01");
+
+                            if (offset != IntPtr.Zero)
+                            {
+                                Memory.PatchAddress(targetProcess, offset, "C3");
+                                Console.WriteLine("No Recoil Active.");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Pattern No Recoil not found in the module.");
                             }
                         }
 
